@@ -1,303 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Paradores | Digital Concierge</title>
-  <style>
-    :root {
-      --bg-page: #f5f2ec;
-      --bg-card: #ffffff;
-      --bg-soft: #faf8f4;
-      --border: #e2dbd0;
-      --text-main: #1f2421;
-      --text-muted: #5c635e;
-      --accent: #8c6239;
-      --accent-dark: #6f4c2a;
-      --user-bubble: #2c3e35;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: linear-gradient(180deg, #ece6dc 0%, var(--bg-page) 45%, #f8f6f2 100%);
-      color: var(--text-main);
-      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 16px;
-    }
-
-    .app {
-      width: 100%;
-      max-width: 820px;
-      height: 88vh;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      box-shadow: 0 18px 45px rgba(31, 36, 33, 0.1);
-    }
-
-    .top-bar {
-      background: #1f2421;
-      color: #f5f2ec;
-      padding: 6px 18px;
-      font-size: 0.75rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .header {
-      padding: 14px 20px;
-      background: var(--bg-card);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .brand-logo {
-      height: 36px;
-      width: auto;
-      max-width: 150px;
-      object-fit: contain;
-      display: block;
-    }
-
-    .brand-fallback {
-      display: none;
-      font-family: Georgia, "Times New Roman", serif;
-      font-weight: 700;
-      font-size: 1.15rem;
-      letter-spacing: 0.08em;
-      color: var(--accent-dark);
-    }
-
-    .brand-divider {
-      width: 1px;
-      height: 28px;
-      background: var(--border);
-    }
-
-    .brand-title {
-      margin: 0;
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 1.08rem;
-      font-weight: 600;
-      color: var(--text-main);
-    }
-
-    .brand-sub {
-      margin: 2px 0 0;
-      font-size: 0.78rem;
-      color: var(--text-muted);
-    }
-
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-    }
-
-    input[type="password"], input[type="text"] {
-      background: var(--bg-soft);
-      color: var(--text-main);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 7px 10px;
-      font-size: 0.84rem;
-      outline: none;
-    }
-
-    input:focus {
-      border-color: var(--accent);
-      background: #ffffff;
-    }
-
-    button {
-      background: var(--accent);
-      color: #ffffff;
-      border: none;
-      border-radius: 6px;
-      padding: 8px 14px;
-      font-size: 0.83rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s ease;
-    }
-
-    button:hover { background: var(--accent-dark); }
-
-    button.secondary {
-      background: var(--bg-soft);
-      color: var(--text-main);
-      border: 1px solid var(--border);
-    }
-
-    button.secondary:hover {
-      background: #efeae0;
-    }
-
-    .quick-prompts {
-      padding: 10px 20px;
-      background: var(--bg-soft);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .chip {
-      background: #ffffff;
-      color: var(--text-main);
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      padding: 5px 12px;
-      font-size: 0.78rem;
-      font-weight: 500;
-    }
-
-    .chip:hover {
-      border-color: var(--accent);
-      color: var(--accent-dark);
-      background: #fdfbf7;
-    }
-
-    .chat-box {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px;
-      background: var(--bg-soft);
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .msg {
-      max-width: 82%;
-      padding: 12px 15px;
-      border-radius: 10px;
-      line-height: 1.5;
-      font-size: 0.92rem;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-    }
-
-    .msg.user {
-      align-self: flex-end;
-      background: var(--user-bubble);
-      color: #ffffff;
-      border-bottom-right-radius: 2px;
-    }
-
-    .msg.bot {
-      align-self: flex-start;
-      background: var(--bg-card);
-      color: var(--text-main);
-      border: 1px solid var(--border);
-      border-bottom-left-radius: 2px;
-      box-shadow: 0 2px 8px rgba(31, 36, 33, 0.04);
-    }
-
-    .input-area {
-      padding: 14px 18px;
-      background: var(--bg-card);
-      border-top: 1px solid var(--border);
-      display: flex;
-      gap: 10px;
-    }
-
-    .input-area input {
-      flex: 1;
-      padding: 10px 14px;
-      font-size: 0.93rem;
-    }
-  </style>
-</head>
-<body>
-  <div class="app">
-    <div class="top-bar">
-      <span>Paradores de Turismo · Heritage &amp; Travel Concierge</span>
-      <span>Live AI + Demo Fallback</span>
-    </div>
-
-    <div class="header">
-      <div class="brand">
-        <img
-          src="./paradores_logo-dark.svg"
-          alt="Paradores"
-          class="brand-logo"
-          onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='inline-block';"
-        />
-        <span id="logoFallback" class="brand-fallback">PARADORES</span>
-        <div class="brand-divider"></div>
-        <div>
-          <h1 class="brand-title">Digital Concierge</h1>
-          <p class="brand-sub">Castles, monasteries, regional gastronomy &amp; Amigos benefits</p>
-        </div>
-      </div>
-
-      <div class="controls">
-        <input type="password" id="apiKeyInput" placeholder="Paste Gemini API Key" />
-        <button class="secondary" id="toggleDemoBtn" type="button">Demo Fallback: OFF</button>
-        <button class="secondary" id="clearBtn" type="button">Clear</button>
-      </div>
-    </div>
-
-    <div class="quick-prompts" id="quickPrompts">
-      <button type="button" class="chip" data-prompt="Tell me about Parador de Ciudad Rodrigo, Mérida, and Ibiza—history, rooms, and highlights.">Historic Paradors</button>
-      <button type="button" class="chip" data-prompt="What regional dishes and restaurants can I try at Paradores like Mérida, Albacete, or Antequera?">Regional Gastronomy</button>
-      <button type="button" class="chip" data-prompt="How does Amigos de Paradores work, and what are the booking and cancellation rules?">Amigos &amp; Booking</button>
-    </div>
-
-    <div class="chat-box" id="chatBox">
-      <div class="msg bot">Welcome to the Paradores Digital Concierge. Ask about historic Paradors, regional cuisine, seasonal offers, or Amigos de Paradores benefits. Paste your Gemini API key above for live AI replies, or toggle Demo Fallback ON for offline backup answers.</div>
-    </div>
-
-    <form class="input-area" id="chatForm">
-      <input type="text" id="promptInput" placeholder="Ask about a Parador, restaurant, offer, or itinerary..." autocomplete="off" required />
-      <button type="submit" id="sendBtn">Send</button>
-    </form>
-  </div>
-
-  <script>
-    const MODELS = ["gemini-3.5-flash-lite", "gemini-3.8-flash"];
-    const REQUEST_TIMEOUT_MS = 12000;
+<script>
+    const MODELS = ["gemini-3.1-flash-lite", "gemini-3.8-flash"];
+    const REQUEST_TIMEOUT_MS = 10000;
 
     const PARADORES_CONTEXT = `
 You are the Digital Concierge for Paradores (paradores.es), Spain's network of historic and nature hotels, restaurants, and experiences.
 Key facts to use accurately when relevant:
+- Booking & Policies: Guests can check availability and book on paradores.es, the Paradores app, directly with a Parador, or via Central Reservations (reservas@parador.es / +34 91 374 25 00). Standard bookings generally allow changes or cancellations more than 2 days before arrival (measured from 00:00), though certain dates/Paradores have longer windows and non-refundable rates (such as Early Booking) cannot be changed or cancelled. For rooms with more than 3 guests, contact the Parador directly.
+- Amigos de Paradores: Free loyalty program with Standard, Gold, and Circle tiers, offering a 5% Amigo web rate discount, points for stays and services, welcome drink, and benefits like spa discounts or breakfast perks depending on terms.
+- Family, Pets & Practical Info: Children up to age 12 often stay free in an extra bed (except certain peak periods), cots up to age 2 are free subject to availability, and children up to 12 get 50% off adult breakfast. Pet stays must be arranged directly with the Parador. Outdoor pools are seasonal, and EV charging, parking/garages, and spa circuits depend on the specific Parador.
 - Selected Paradors:
-  * Parador de Ciudad Rodrigo (Salamanca): Castle rebuilt in 1372 by Henry II of Castile overlooking the Águeda river; Standard Double and Junior Suite rooms; near Salamanca (80 km) and Portugal (25 km).
-  * Parador de Mérida (Badajoz): 18th-century Baroque Convento de Jesús (built 1725) on Roman ruins/Garden of Antiquities; outdoor pool, gym, sauna, solarium; rooms include Standard Double, Superior Double, Suite.
-  * Parador de Ibiza (Eivissa - Dalt Vila): Historic acropolis/former Almudaina Castle in UNESCO Dalt Vila with Mediterranean and port views; contemporary art collection; outdoor pool and wellness zone.
-  * Parador de Jarandilla de la Vera (Cáceres): 16th-century castle-palace of the Counts of Oropesa where Emperor Charles V stayed (1556–1557); near Monastery of Yuste and Garganta de los Infiernos.
-  * Parador de Lerma (Burgos): 17th-century Ducal Palace in Lerma's Plaza Mayor; near Arlanza Valley.
-  * Parador de Cangas de Onís (Asturias): Benedictine monastery of San Pedro de Villanueva by the Sella river and Picos de Europa.
-  * Parador de Bielsa (Huesca): Mountain refuge in the Pineta Valley at the foot of Monte Perdido.
-  * Parador de Vic-Sau (Barcelona): Catalan farmhouse near Sau reservoir and Guilleries mountains.
-  * Parador de Cazorla (Jaén): Andalusian farmhouse style inside Sierras de Cazorla, Segura y Las Villas Natural Park.
-  * Parador Costa da Morte (Muxía, A Coruña): Terraced modern design overlooking Lourido Beach with spa circuit and treatments.
+  * Ciudad Rodrigo (Salamanca): 1372 castle rebuilt by Henry II of Castile overlooking the Águeda river; Standard Double and Junior Suite rooms; near Salamanca (80 km) and Portugal (25 km).
+  * Mérida (Badajoz): 1725 Baroque Convento de Jesús on Roman ruins/Garden of Antiquities; outdoor pool, gym, sauna, solarium; Standard Double, Superior Double, Suite.
+  * Ibiza (Eivissa - Dalt Vila): Historic acropolis/former Almudaina Castle in UNESCO Dalt Vila with Mediterranean and port views, contemporary art, pool, and wellness zone.
+  * Jarandilla de la Vera (Cáceres): 16th-century castle-palace where Emperor Charles V stayed (1556–1557), near Monastery of Yuste and Garganta de los Infiernos.
+  * Lerma (Burgos): 17th-century Ducal Palace in Lerma's Plaza Mayor; near Arlanza Valley.
+  * Cangas de Onís (Asturias): Benedictine monastery of San Pedro de Villanueva by the Sella river and Picos de Europa.
+  * Bielsa (Huesca): Mountain refuge in the Pineta Valley at the foot of Monte Perdido.
+  * Vic-Sau (Barcelona): Catalan farmhouse near Sau reservoir and Guilleries mountains.
+  * Cazorla (Jaén): Andalusian farmhouse style inside Sierras de Cazorla, Segura y Las Villas Natural Park.
+  * Costa da Morte (Muxía, A Coruña): Terraced design overlooking Lourido Beach with spa circuit and treatments.
 - Gastronomy: Regional cuisine across Spain—e.g., farinato and Guijuelo ham in Ciudad Rodrigo; Iberian pork, Dehesa ham, and migas in Mérida; migas ruleras and Manchegan dishes in Albacete; porra antequerana and bienmesabe in Antequera.
-- Amigos de Paradores & Bookings: Free loyalty program with tiers (Standard, Gold, Circle), 5% Amigo web rate discount, points toward stays/spa, and welcome benefits. Bookings and cancellations generally follow the rate terms (standard bookings often allow changes/cancellations more than 2 days before arrival unless non-refundable such as Early Booking); Central Reservations is reservas@parador.es / +34 91 374 25 00.
 Keep answers helpful, clear, and well-structured.
 `.trim();
 
@@ -313,9 +35,13 @@ Keep answers helpful, clear, and well-structured.
     let demoFallback = false;
     let history = [];
 
-    toggleDemoBtn.addEventListener("click", () => {
-      demoFallback = !demoFallback;
+    function setDemoFallback(enabled) {
+      demoFallback = enabled;
       toggleDemoBtn.textContent = `Demo Fallback: ${demoFallback ? "ON" : "OFF"}`;
+    }
+
+    toggleDemoBtn.addEventListener("click", () => {
+      setDemoFallback(!demoFallback);
     });
 
     clearBtn.addEventListener("click", () => {
@@ -341,31 +67,73 @@ Keep answers helpful, clear, and well-structured.
 
     function getFallbackReply(userText) {
       const lower = userText.toLowerCase();
-      if (lower.includes("amigo") || lower.includes("book") || lower.includes("cancel") || lower.includes("offer")) {
+
+      if (lower.includes("how to book") || lower.includes("guide to book") || lower.includes("book a") || lower.includes("booking") || lower.includes("reserve")) {
         return (
-          "Paradores Booking & Amigos Highlights:\n" +
-          "• Amigos de Paradores is free to join and includes a 5% web Amigo rate discount, points for stays/spa, and tiers (Standard, Gold, Circle).\n" +
-          "• Standard bookings generally allow changes/cancellations more than 2 days prior to arrival, while non-refundable rates (like Early Booking) cannot be cancelled.\n" +
-          "• Central Reservations: reservas@parador.es or +34 91 374 25 00."
+          "How to Book a Parador:\n" +
+          "1. Choose your destination & dates: Pick a Parador (such as Ciudad Rodrigo, Mérida, Ibiza, or Jarandilla de la Vera) and select your check-in and check-out dates.\n" +
+          "2. Pick your rate & room: Compare available room types and rates (log in as an Amigo de Paradores first if using Amigo pricing or points).\n" +
+          "3. Confirm your booking: Complete your reservation on paradores.es, via the Paradores app, directly with the Parador, or through Central Reservations (reservas@parador.es or +34 91 374 25 00).\n" +
+          "4. Check policy & group needs: Standard bookings generally allow changes/cancellations more than 2 days before arrival (unless non-refundable like Early Booking). For rooms with more than 3 guests, contact the Parador directly."
         );
       }
-      if (lower.includes("food") || lower.includes("gastronom") || lower.includes("restaurant") || lower.includes("dish")) {
+
+      if (lower.includes("cancel") || lower.includes("change") || lower.includes("refund") || lower.includes("policy")) {
         return (
-          "Regional Gastronomy at Paradores:\n" +
-          "• Ciudad Rodrigo: Guijuelo ham, Iberian pork, and farinato.\n" +
-          "• Mérida: Extremaduran Iberian pork, Dehesa ham, and traditional stews.\n" +
-          "• Antequera: Porra antequerana, pío antequerano, and bienmesabe."
+          "Booking Changes & Cancellations:\n" +
+          "• Request changes or cancellations through the same channel where you booked (paradores.es, Central Reservations at reservas@parador.es / +34 91 374 25 00, or directly at the Parador).\n" +
+          "• Standard bookings generally allow changes or cancellations more than 2 days before arrival (from 00:00), though some dates or properties have longer windows.\n" +
+          "• Special or non-refundable rates (such as Early Booking) do not allow changes or cancellations."
         );
       }
-      if (lower.includes("parador") || lower.includes("ciudad rodrigo") || lower.includes("merida") || lower.includes("mérida") || lower.includes("ibiza") || lower.includes("stay")) {
+
+      if (lower.includes("amigo") || lower.includes("loyalty") || lower.includes("points") || lower.includes("tier") || lower.includes("breakfast")) {
         return (
-          "Featured Paradores:\n" +
-          "• Ciudad Rodrigo: 1372 castle overlooking the Águeda river in Salamanca.\n" +
-          "• Mérida: 1725 Baroque monastery over Roman ruins with a Garden of Antiquities.\n" +
-          "• Ibiza (Dalt Vila): Historic hilltop setting overlooking the Mediterranean and port."
+          "Amigos de Paradores Program:\n" +
+          "• Joining is free and gives access to the Amigo web rate (5% discount on the Parador rate), points on stays and eligible services, and a welcome drink.\n" +
+          "• Tiers progress from Standard to Gold and Circle based on points and visits across different Paradors.\n" +
+          "• Points can be redeemed toward stays or eligible experiences according to program terms."
         );
       }
-      return `Demo Fallback Reply: I noted "${userText}". Paste a Gemini API key with Demo Fallback OFF for full live AI answers.`;
+
+      if (lower.includes("pet") || lower.includes("dog") || lower.includes("child") || lower.includes("kid") || lower.includes("cot") || lower.includes("ev") || lower.includes("charg") || lower.includes("park") || lower.includes("spa") || lower.includes("pool")) {
+        return (
+          "Facilities, Family & Pet Info:\n" +
+          "• Pets: Check pet eligibility and conditions for your chosen Parador and arrange pet stays directly with the hotel.\n" +
+          "• Children: Children up to age 12 often stay free in an extra bed (outside certain peak dates), cots up to age 2 are free subject to availability, and children up to 12 get 50% off adult breakfast.\n" +
+          "• Pools, Spa, Parking & EV Charging: Outdoor pools are seasonal, and spa circuits, parking/garages, and EV chargers vary by Parador—verify specific details before arrival."
+        );
+      }
+
+      if (lower.includes("food") || lower.includes("gastronom") || lower.includes("restaurant") || lower.includes("dish") || lower.includes("albacete") || lower.includes("antequera") || lower.includes("eat") || lower.includes("dinner")) {
+        return (
+          "Regional Gastronomy & Restaurants:\n" +
+          "• Mérida: Extremaduran Iberian pork, Dehesa ham, and traditional dishes at the Parador restaurant and La Alacena del Foro.\n" +
+          "• Albacete: Manchegan classics like migas ruleras, pisto manchego, and pickled partridge.\n" +
+          "• Antequera: Porra antequerana, pío antequerano, and bienmesabe.\n" +
+          "• Ciudad Rodrigo: Guijuelo ham, Iberian pork, and farinato."
+        );
+      }
+
+      if (lower.includes("parador") || lower.includes("ciudad rodrigo") || lower.includes("merida") || lower.includes("mérida") || lower.includes("ibiza") || lower.includes("jarandilla") || lower.includes("lerma") || lower.includes("cangas") || lower.includes("bielsa") || lower.includes("cazorla") || lower.includes("costa da morte") || lower.includes("stay") || lower.includes("where")) {
+        return (
+          "Featured Paradores Across Spain:\n" +
+          "• Ciudad Rodrigo (Salamanca): 1372 castle overlooking the Águeda river with Standard Double and Junior Suite rooms.\n" +
+          "• Mérida (Badajoz): 1725 Baroque monastery over Roman ruins with a Garden of Antiquities, pool, gym, and sauna.\n" +
+          "• Ibiza (Dalt Vila): Historic hilltop setting in UNESCO Dalt Vila overlooking the Mediterranean and port.\n" +
+          "• Jarandilla de la Vera, Lerma, Cangas de Onís, Bielsa, Vic-Sau, Cazorla & Costa da Morte: Historic palaces, monasteries, mountain refuges, and coastal stays."
+        );
+      }
+
+      if (lower.includes("hello") || lower.includes("hi") || lower.includes("hey")) {
+        return (
+          "Hello! Welcome to the Paradores Digital Concierge. Ask me how to book a Parador, explore historic castles and monasteries, check regional dishes, or learn about Amigos de Paradores."
+        );
+      }
+
+      return (
+        `Paradores Concierge (Demo Mode): Regarding "${userText}", I can help with how to book a stay, cancellation rules, Amigos de Paradores benefits, regional restaurants, or featured Paradors like Ciudad Rodrigo, Mérida, and Ibiza.`
+      );
     }
 
     async function callSingleModel(model, apiKey, contentsPayload) {
@@ -440,13 +208,11 @@ Keep answers helpful, clear, and well-structured.
         }
         thinkingMsg.textContent = reply;
       } catch (err) {
-        const fallback = getFallbackReply(text);
-        thinkingMsg.textContent = `${fallback}\n\n(Live API was busy or timed out: ${err.message})`;
+        setDemoFallback(true);
+        thinkingMsg.textContent = getFallbackReply(text);
       } finally {
         sendBtn.disabled = false;
         chatBox.scrollTop = chatBox.scrollHeight;
       }
     });
   </script>
-</body>
-</html>

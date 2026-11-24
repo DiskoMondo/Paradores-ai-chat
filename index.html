@@ -1,218 +1,303 @@
-<script>
-    const MODELS = ["gemini-3.1-flash-lite", "gemini-3.8-flash"];
-    const REQUEST_TIMEOUT_MS = 10000;
-
-    const PARADORES_CONTEXT = `
-You are the Digital Concierge for Paradores (paradores.es), Spain's network of historic and nature hotels, restaurants, and experiences.
-Key facts to use accurately when relevant:
-- Booking & Policies: Guests can check availability and book on paradores.es, the Paradores app, directly with a Parador, or via Central Reservations (reservas@parador.es / +34 91 374 25 00). Standard bookings generally allow changes or cancellations more than 2 days before arrival (measured from 00:00), though certain dates/Paradores have longer windows and non-refundable rates (such as Early Booking) cannot be changed or cancelled. For rooms with more than 3 guests, contact the Parador directly.
-- Amigos de Paradores: Free loyalty program with Standard, Gold, and Circle tiers, offering a 5% Amigo web rate discount, points for stays and services, welcome drink, and benefits like spa discounts or breakfast perks depending on terms.
-- Family, Pets & Practical Info: Children up to age 12 often stay free in an extra bed (except certain peak periods), cots up to age 2 are free subject to availability, and children up to 12 get 50% off adult breakfast. Pet stays must be arranged directly with the Parador. Outdoor pools are seasonal, and EV charging, parking/garages, and spa circuits depend on the specific Parador.
-- Selected Paradors:
-  * Ciudad Rodrigo (Salamanca): 1372 castle rebuilt by Henry II of Castile overlooking the Águeda river; Standard Double and Junior Suite rooms; near Salamanca (80 km) and Portugal (25 km).
-  * Mérida (Badajoz): 1725 Baroque Convento de Jesús on Roman ruins/Garden of Antiquities; outdoor pool, gym, sauna, solarium; Standard Double, Superior Double, Suite.
-  * Ibiza (Eivissa - Dalt Vila): Historic acropolis/former Almudaina Castle in UNESCO Dalt Vila with Mediterranean and port views, contemporary art, pool, and wellness zone.
-  * Jarandilla de la Vera (Cáceres): 16th-century castle-palace where Emperor Charles V stayed (1556–1557), near Monastery of Yuste and Garganta de los Infiernos.
-  * Lerma (Burgos): 17th-century Ducal Palace in Lerma's Plaza Mayor; near Arlanza Valley.
-  * Cangas de Onís (Asturias): Benedictine monastery of San Pedro de Villanueva by the Sella river and Picos de Europa.
-  * Bielsa (Huesca): Mountain refuge in the Pineta Valley at the foot of Monte Perdido.
-  * Vic-Sau (Barcelona): Catalan farmhouse near Sau reservoir and Guilleries mountains.
-  * Cazorla (Jaén): Andalusian farmhouse style inside Sierras de Cazorla, Segura y Las Villas Natural Park.
-  * Costa da Morte (Muxía, A Coruña): Terraced design overlooking Lourido Beach with spa circuit and treatments.
-- Gastronomy: Regional cuisine across Spain—e.g., farinato and Guijuelo ham in Ciudad Rodrigo; Iberian pork, Dehesa ham, and migas in Mérida; migas ruleras and Manchegan dishes in Albacete; porra antequerana and bienmesabe in Antequera.
-Keep answers helpful, clear, and well-structured.
-`.trim();
-
-    const chatBox = document.getElementById("chatBox");
-    const chatForm = document.getElementById("chatForm");
-    const promptInput = document.getElementById("promptInput");
-    const apiKeyInput = document.getElementById("apiKeyInput");
-    const toggleDemoBtn = document.getElementById("toggleDemoBtn");
-    const clearBtn = document.getElementById("clearBtn");
-    const sendBtn = document.getElementById("sendBtn");
-    const quickPrompts = document.getElementById("quickPrompts");
-
-    let demoFallback = false;
-    let history = [];
-
-    function setDemoFallback(enabled) {
-      demoFallback = enabled;
-      toggleDemoBtn.textContent = `Demo Fallback: ${demoFallback ? "ON" : "OFF"}`;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Paradores Concierge (Groq)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f0e8;
+      color: #1e2420;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
     }
-
-    toggleDemoBtn.addEventListener("click", () => {
-      setDemoFallback(!demoFallback);
-    });
-
-    clearBtn.addEventListener("click", () => {
-      history = [];
-      chatBox.innerHTML = `<div class="msg bot">Conversation cleared. How can I help you with Paradores?</div>`;
-    });
-
-    quickPrompts.addEventListener("click", (e) => {
-      const btn = e.target.closest(".chip");
-      if (!btn) return;
-      promptInput.value = btn.dataset.prompt;
-      promptInput.focus();
-    });
-
-    function appendMessage(text, sender) {
-      const div = document.createElement("div");
-      div.className = `msg ${sender}`;
-      div.textContent = text;
-      chatBox.appendChild(div);
-      chatBox.scrollTop = chatBox.scrollHeight;
-      return div;
+    .box {
+      width: 100%;
+      max-width: 780px;
+      background: #ffffff;
+      border: 1px solid #d8cfc0;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
     }
-
-    function getFallbackReply(userText) {
-      const lower = userText.toLowerCase();
-
-      if (lower.includes("how to book") || lower.includes("guide to book") || lower.includes("book a") || lower.includes("booking") || lower.includes("reserve")) {
-        return (
-          "How to Book a Parador:\n" +
-          "1. Choose your destination & dates: Pick a Parador (such as Ciudad Rodrigo, Mérida, Ibiza, or Jarandilla de la Vera) and select your check-in and check-out dates.\n" +
-          "2. Pick your rate & room: Compare available room types and rates (log in as an Amigo de Paradores first if using Amigo pricing or points).\n" +
-          "3. Confirm your booking: Complete your reservation on paradores.es, via the Paradores app, directly with the Parador, or through Central Reservations (reservas@parador.es or +34 91 374 25 00).\n" +
-          "4. Check policy & group needs: Standard bookings generally allow changes/cancellations more than 2 days before arrival (unless non-refundable like Early Booking). For rooms with more than 3 guests, contact the Parador directly."
-        );
-      }
-
-      if (lower.includes("cancel") || lower.includes("change") || lower.includes("refund") || lower.includes("policy")) {
-        return (
-          "Booking Changes & Cancellations:\n" +
-          "• Request changes or cancellations through the same channel where you booked (paradores.es, Central Reservations at reservas@parador.es / +34 91 374 25 00, or directly at the Parador).\n" +
-          "• Standard bookings generally allow changes or cancellations more than 2 days before arrival (from 00:00), though some dates or properties have longer windows.\n" +
-          "• Special or non-refundable rates (such as Early Booking) do not allow changes or cancellations."
-        );
-      }
-
-      if (lower.includes("amigo") || lower.includes("loyalty") || lower.includes("points") || lower.includes("tier") || lower.includes("breakfast")) {
-        return (
-          "Amigos de Paradores Program:\n" +
-          "• Joining is free and gives access to the Amigo web rate (5% discount on the Parador rate), points on stays and eligible services, and a welcome drink.\n" +
-          "• Tiers progress from Standard to Gold and Circle based on points and visits across different Paradors.\n" +
-          "• Points can be redeemed toward stays or eligible experiences according to program terms."
-        );
-      }
-
-      if (lower.includes("pet") || lower.includes("dog") || lower.includes("child") || lower.includes("kid") || lower.includes("cot") || lower.includes("ev") || lower.includes("charg") || lower.includes("park") || lower.includes("spa") || lower.includes("pool")) {
-        return (
-          "Facilities, Family & Pet Info:\n" +
-          "• Pets: Check pet eligibility and conditions for your chosen Parador and arrange pet stays directly with the hotel.\n" +
-          "• Children: Children up to age 12 often stay free in an extra bed (outside certain peak dates), cots up to age 2 are free subject to availability, and children up to 12 get 50% off adult breakfast.\n" +
-          "• Pools, Spa, Parking & EV Charging: Outdoor pools are seasonal, and spa circuits, parking/garages, and EV chargers vary by Parador—verify specific details before arrival."
-        );
-      }
-
-      if (lower.includes("food") || lower.includes("gastronom") || lower.includes("restaurant") || lower.includes("dish") || lower.includes("albacete") || lower.includes("antequera") || lower.includes("eat") || lower.includes("dinner")) {
-        return (
-          "Regional Gastronomy & Restaurants:\n" +
-          "• Mérida: Extremaduran Iberian pork, Dehesa ham, and traditional dishes at the Parador restaurant and La Alacena del Foro.\n" +
-          "• Albacete: Manchegan classics like migas ruleras, pisto manchego, and pickled partridge.\n" +
-          "• Antequera: Porra antequerana, pío antequerano, and bienmesabe.\n" +
-          "• Ciudad Rodrigo: Guijuelo ham, Iberian pork, and farinato."
-        );
-      }
-
-      if (lower.includes("parador") || lower.includes("ciudad rodrigo") || lower.includes("merida") || lower.includes("mérida") || lower.includes("ibiza") || lower.includes("jarandilla") || lower.includes("lerma") || lower.includes("cangas") || lower.includes("bielsa") || lower.includes("cazorla") || lower.includes("costa da morte") || lower.includes("stay") || lower.includes("where")) {
-        return (
-          "Featured Paradores Across Spain:\n" +
-          "• Ciudad Rodrigo (Salamanca): 1372 castle overlooking the Águeda river with Standard Double and Junior Suite rooms.\n" +
-          "• Mérida (Badajoz): 1725 Baroque monastery over Roman ruins with a Garden of Antiquities, pool, gym, and sauna.\n" +
-          "• Ibiza (Dalt Vila): Historic hilltop setting in UNESCO Dalt Vila overlooking the Mediterranean and port.\n" +
-          "• Jarandilla de la Vera, Lerma, Cangas de Onís, Bielsa, Vic-Sau, Cazorla & Costa da Morte: Historic palaces, monasteries, mountain refuges, and coastal stays."
-        );
-      }
-
-      if (lower.includes("hello") || lower.includes("hi") || lower.includes("hey")) {
-        return (
-          "Hello! Welcome to the Paradores Digital Concierge. Ask me how to book a Parador, explore historic castles and monasteries, check regional dishes, or learn about Amigos de Paradores."
-        );
-      }
-
-      return (
-        `Paradores Concierge (Demo Mode): Regarding "${userText}", I can help with how to book a stay, cancellation rules, Amigos de Paradores benefits, regional restaurants, or featured Paradors like Ciudad Rodrigo, Mérida, and Ibiza.`
-      );
+    .top {
+      background: #1e2420;
+      color: #ffffff;
+      padding: 12px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
     }
+    .brand-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-logo {
+      height: 24px;
+      width: auto;
+      display: block;
+    }
+    .controls {
+      padding: 12px 18px;
+      background: #faf7f2;
+      border-bottom: 1px solid #e5ddd0;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .chips {
+      padding: 10px 18px;
+      background: #f2ece1;
+      border-bottom: 1px solid #e5ddd0;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .messages {
+      height: 380px;
+      overflow-y: auto;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #fcfbf8;
+    }
+    .msg {
+      max-width: 82%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      line-height: 1.45;
+      font-size: 14px;
+    }
+    .user {
+      align-self: flex-end;
+      background: #283b31;
+      color: #ffffff;
+    }
+    .bot {
+      align-self: flex-start;
+      background: #ffffff;
+      border: 1px solid #ddd4c5;
+      color: #1e2420;
+    }
+    form {
+      display: flex;
+      gap: 8px;
+      padding: 12px 18px;
+      border-top: 1px solid #e5ddd0;
+      background: #ffffff;
+    }
+    input {
+      padding: 9px 12px;
+      border: 1px solid #cfc4b2;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    form input { flex: 1; }
+    button {
+      padding: 9px 14px;
+      border: none;
+      border-radius: 6px;
+      background: #8c6239;
+      color: #ffffff;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button.alt {
+      background: #ffffff;
+      color: #1e2420;
+      border: 1px solid #cfc4b2;
+      font-weight: normal;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="top">
+      <div class="brand-left">
+        <img
+          src="./paradores_logo-dark.svg"
+          alt="Paradores"
+          class="brand-logo"
+          onerror="this.style.display='none';"
+        />
+        <strong>PARADORES · Digital Concierge</strong>
+      </div>
+      <span id="statusText">Mode: Ready</span>
+    </div>
 
-    async function callSingleModel(model, apiKey, contentsPayload) {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    <div class="controls">
+      <input type="password" id="apiKey" placeholder="Groq API Key (gsk_...)" />
+      <button type="button" class="alt" id="demoBtn">Demo Mode: OFF</button>
+      <button type="button" class="alt" id="clearBtn">Clear</button>
+    </div>
 
-      try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
-        const response = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: controller.signal,
-          body: JSON.stringify({
-            system_instruction: { parts: [{ text: PARADORES_CONTEXT }] },
-            contents: contentsPayload
-          })
-        });
+    <div class="chips" id="chips">
+      <button type="button" class="alt" data-q="How do I book a Parador stay step by step?">How to Book</button>
+      <button type="button" class="alt" data-q="Tell me about Parador de Ciudad Rodrigo, Mérida, and Ibiza.">Historic Paradors</button>
+      <button type="button" class="alt" data-q="What regional dishes can I try at Mérida, Albacete, or Antequera?">Regional Gastronomy</button>
+      <button type="button" class="alt" data-q="How does Amigos de Paradores work and what are the cancellation rules?">Amigos &amp; Cancellation</button>
+    </div>
 
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error?.message || `HTTP ${response.status}`);
+    <div class="messages" id="messages">
+      <div class="msg bot">Welcome to the Paradores Digital Concierge. Paste your Groq API key above for live AI replies, or toggle Demo Mode ON for instant backup answers.</div>
+    </div>
+
+    <form id="chatForm">
+      <input type="text" id="userInput" placeholder="Ask about booking, Paradors, food, or Amigos..." required />
+      <button type="submit" id="sendBtn">Send</button>
+    </form>
+  </div>
+
+  <script>
+    (function () {
+      const messagesEl = document.getElementById("messages");
+      const formEl = document.getElementById("chatForm");
+      const inputEl = document.getElementById("userInput");
+      const apiKeyEl = document.getElementById("apiKey");
+      const demoBtn = document.getElementById("demoBtn");
+      const clearBtn = document.getElementById("clearBtn");
+      const chipsEl = document.getElementById("chips");
+      const sendBtn = document.getElementById("sendBtn");
+      const statusText = document.getElementById("statusText");
+
+      const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
+      const GROQ_MODELS = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"];
+      const SYSTEM_TEXT =
+        "You are the Paradores Digital Concierge for Spain's Paradores hotels, regional gastronomy, booking rules, and Amigos de Paradores. Keep answers clear, helpful, and accurate.";
+
+      let demoOn = false;
+      let history = [];
+
+      function updateLabel() {
+        demoBtn.textContent = demoOn ? "Demo Mode: ON" : "Demo Mode: OFF";
+        statusText.textContent = demoOn ? "Mode: Instant Demo" : "Mode: Live Groq";
+      }
+
+      demoBtn.onclick = function () {
+        demoOn = !demoOn;
+        updateLabel();
+      };
+
+      clearBtn.onclick = function () {
+        history = [];
+        messagesEl.innerHTML = '<div class="msg bot">Chat cleared. How can I help with Paradores?</div>';
+      };
+
+      chipsEl.onclick = function (e) {
+        if (e.target && e.target.dataset.q) {
+          inputEl.value = e.target.dataset.q;
+          formEl.dispatchEvent(new Event("submit", { cancelable: true }));
         }
+      };
 
-        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!reply) {
-          throw new Error("Empty response from model.");
-        }
-        return reply;
-      } finally {
-        clearTimeout(timer);
-      }
-    }
-
-    async function callGeminiWithRetry(apiKey, userText) {
-      const candidateHistory = [...history, { role: "user", parts: [{ text: userText }] }];
-      let lastError = null;
-
-      for (const model of MODELS) {
-        try {
-          const reply = await callSingleModel(model, apiKey, candidateHistory);
-          history = [...candidateHistory, { role: "model", parts: [{ text: reply }] }];
-          return reply;
-        } catch (err) {
-          lastError = err;
-        }
+      function addMsg(text, who) {
+        const div = document.createElement("div");
+        div.className = "msg " + who;
+        div.textContent = text;
+        messagesEl.appendChild(div);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+        return div;
       }
 
-      throw lastError || new Error("All models unavailable.");
-    }
+      function localAnswer(q) {
+        const s = q.toLowerCase();
+        if (s.includes("book") || s.includes("reserve")) {
+          return "How to Book a Parador:\n1. Pick a Parador (Ciudad Rodrigo, Mérida, Ibiza, etc.) and dates.\n2. Choose your room and rate (sign in as an Amigo if using Amigo rates/points).\n3. Book on paradores.es, via the Paradores app, directly with the Parador, or via Central Reservations (reservas@parador.es / +34 91 374 25 00).\n4. Standard bookings generally allow changes/cancellations more than 2 days before arrival unless non-refundable (such as Early Booking).";
+        }
+        if (s.includes("cancel") || s.includes("change")) {
+          return "Changes & Cancellations:\n• Manage bookings through paradores.es, Central Reservations (reservas@parador.es / +34 91 374 25 00), or the Parador.\n• Standard rates generally allow changes/cancellations more than 2 days before arrival; non-refundable rates like Early Booking cannot be cancelled.";
+        }
+        if (s.includes("amigo") || s.includes("loyalty") || s.includes("point")) {
+          return "Amigos de Paradores:\n• Free program with Standard, Gold, and Circle tiers.\n• Includes a 5% Amigo web rate discount, points on stays/services, and welcome perks.";
+        }
+        if (s.includes("food") || s.includes("dish") || s.includes("gastronom") || s.includes("albacete") || s.includes("antequera")) {
+          return "Regional Gastronomy:\n• Mérida: Iberian pork, Dehesa ham, and traditional stews.\n• Albacete: Migas ruleras, pisto manchego, and Manchegan dishes.\n• Antequera: Porra antequerana, pío antequerano, and bienmesabe.";
+        }
+        return "Featured Paradors:\n• Ciudad Rodrigo: 1372 castle overlooking the Águeda river in Salamanca.\n• Mérida: 1725 Baroque monastery over Roman ruins.\n• Ibiza (Dalt Vila): Historic hilltop setting overlooking the Mediterranean and port.";
+      }
 
-    chatForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const text = promptInput.value.trim();
-      if (!text) return;
+      async function askGroq(key, promptText) {
+        const nextHistory = [...history, { role: "user", content: promptText }];
+        const errors = [];
 
-      appendMessage(text, "user");
-      promptInput.value = "";
-      sendBtn.disabled = true;
-
-      const thinkingMsg = appendMessage("Thinking...", "bot");
-      const apiKey = apiKeyInput.value.trim();
-
-      try {
-        let reply;
-        if (demoFallback || !apiKey) {
-          reply = getFallbackReply(text);
-          if (!apiKey && !demoFallback) {
-            reply += "\n\n(Tip: Paste a Gemini API key above for live AI, or toggle Demo Fallback ON for offline demo answers.)";
+        for (const model of GROQ_MODELS) {
+          const ctrl = new AbortController();
+          const tid = setTimeout(() => ctrl.abort(), 9000);
+          try {
+            const res = await fetch(GROQ_ENDPOINT, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + key
+              },
+              signal: ctrl.signal,
+              body: JSON.stringify({
+                model: model,
+                messages: [{ role: "system", content: SYSTEM_TEXT }, ...nextHistory],
+                temperature: 0.4,
+                max_completion_tokens: 800
+              })
+            });
+            const data = await res.json().catch(() => ({}));
+            const out = data && data.choices && data.choices[0] && data.choices[0].message
+              ? data.choices[0].message.content
+              : "";
+            if (res.ok && out && out.trim()) {
+              history = [...nextHistory, { role: "assistant", content: out.trim() }];
+              return out.trim();
+            }
+            errors.push(model + ": " + (data.error && data.error.message ? data.error.message : "HTTP " + res.status));
+          } catch (err) {
+            errors.push(model + ": " + (err && err.name === "AbortError" ? "Timed out after 9s" : err.message || String(err)));
+          } finally {
+            clearTimeout(tid);
           }
-        } else {
-          reply = await callGeminiWithRetry(apiKey, text);
         }
-        thinkingMsg.textContent = reply;
-      } catch (err) {
-        setDemoFallback(true);
-        thinkingMsg.textContent = getFallbackReply(text);
-      } finally {
-        sendBtn.disabled = false;
-        chatBox.scrollTop = chatBox.scrollHeight;
+
+        throw new Error(errors.join(" | "));
       }
-    });
+
+      formEl.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const q = inputEl.value.trim();
+        if (!q) return;
+
+        addMsg(q, "user");
+        inputEl.value = "";
+        sendBtn.disabled = true;
+        const botBubble = addMsg("Thinking...", "bot");
+
+        try {
+          const key = apiKeyEl.value.trim();
+          if (demoOn || !key) {
+            botBubble.textContent = localAnswer(q);
+          } else {
+            botBubble.textContent = await askGroq(key, q);
+          }
+        } catch (err) {
+          demoOn = true;
+          updateLabel();
+          botBubble.textContent =
+            localAnswer(q) +
+            "\n\n(Switched to Demo Mode automatically — Live API note: " +
+            (err && err.message ? err.message : String(err)) +
+            ")";
+        } finally {
+          sendBtn.disabled = false;
+          messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+      });
+
+      updateLabel();
+    })();
   </script>
+</body>
+</html>

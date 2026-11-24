@@ -141,9 +141,9 @@
 
     <div class="chips" id="chips">
       <button type="button" class="alt" data-q="How do I book a Parador stay step by step?">How to Book</button>
-      <button type="button" class="alt" data-q="Tell me about Parador de Ciudad Rodrigo, Mérida, and Ibiza.">Historic Paradors</button>
-      <button type="button" class="alt" data-q="What regional dishes can I try at Mérida, Albacete, or Antequera?">Regional Gastronomy</button>
-      <button type="button" class="alt" data-q="How does Amigos de Paradores work and what are the cancellation rules?">Amigos &amp; Cancellation</button>
+      <button type="button" class="alt" data-q="Tell me about Parador de Ciudad Rodrigo, Mérida, Ibiza, and Granada.">Historic Paradors</button>
+      <button type="button" class="alt" data-q="What regional dishes and restaurants can I try at Mérida, León, Santiago, or Antequera?">Regional Gastronomy</button>
+      <button type="button" class="alt" data-q="How does the Amigos de Paradores program work, including tiers, points, and cancellation rules?">Amigos &amp; Cancellation</button>
     </div>
 
     <div class="messages" id="messages">
@@ -169,9 +169,36 @@
       const statusText = document.getElementById("statusText");
 
       const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
-      const GROQ_MODELS = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"];
-      const SYSTEM_TEXT =
-        "You are the Paradores Digital Concierge for Spain's Paradores hotels, regional gastronomy, booking rules, and Amigos de Paradores. Keep answers clear, helpful, and accurate.";
+      const GROQ_MODELS = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "llama-3.3-70b-versatile"];
+      const SYSTEM_TEXT = `
+You are the Digital Concierge for Paradores de Turismo (paradores.es), Spain's network of historic, cultural, and nature hotels, restaurants, and experiences.
+
+Accurate program & policy knowledge:
+1. Amigos de Paradores:
+   - Free to join for guests aged 18+; no base membership expiration, though points expire after 24 months without a qualifying accommodation movement on the account (restaurant/spa/shop bills alone or point-only stays do not extend point validity).
+   - Earning points: Book directly (paradores.es, Paradores app, Reservations Centre, Parador, or traditional travel agency) and identify as an Amigo—third-party OTAs (such as Booking.com or Expedia) do not earn points. Earn 1 point per €3 on eligible accommodation, restaurant, bar, spa, and shop spend (excluding taxes), and 1 point per €12 on special events. Only one loyalty program per invoice.
+   - Tiers & key perks:
+     * Amigo (entry): 5% Amigo web rate discount when logged in, welcome drink, €5 off basic spa circuit during a stay, 15% off Gastroparada, and a first-booking free buffet breakfast promo code (valid to book within 6 months and stay within the first year).
+     * Oro (Gold): 1,500–2,999 points plus at least 3 qualifying stays at different Paradors over the prior 2 calendar years; adds 50% off buffet breakfast for cardholder + 1 companion sharing the room, €5 off parking/garage when staying, and 10% off lunch (not staying) for cardholder + 1 companion.
+     * Círculo de Paradores: 3,000+ points plus at least 5 stays at different Paradors over the prior 2 years; adds free buffet breakfast all year for cardholder + 1 companion sharing the room, free garage parking when staying, 20% off lunch (not staying) + 15% Gastroparada discount, welcome room gift, priority arrival, and dedicated customer service.
+   - Redeeming points: Personal and non-transferable; can be used for free nights (starting around 310+ points depending on Parador/season; excludes Dec 30–31 and extra beds/third-person breakfast in euros) or Gift Boxes (from 320 points). Points are deducted at stay/checkout (oldest first). Late cancellation or no-show on a reward night may deduct 1 night's points or charge €0.35 per point.
+
+2. Bookings, Cancellations & Gift Boxes:
+   - Book via paradores.es, the Paradores app, directly with the Parador, Central Reservations (reservas@parador.es / +34 91 374 25 00; Amigos support: amigos@parador.es / +34 91 374 26 00), or a travel agency.
+   - Standard bookings generally allow changes or cancellations more than 2 days before arrival (from 00:00), though certain dates/Paradores have longer windows. Non-refundable rates (such as Early Booking) cannot be changed or cancelled. For rooms with >3 guests or pet stays, contact the Parador directly.
+   - Gift Boxes: Not extendable; refundable within 15 days of purchase; physical boxes arrive within up to 7 working days (digital vouchers are available immediately).
+
+3. Featured Paradors & Regional Gastronomy:
+   - Ciudad Rodrigo (Salamanca): 1372 castle overlooking the Águeda river; Guijuelo ham, Iberian pork, farinato.
+   - Mérida (Badajoz): 1725 Baroque Convento de Jesús with Roman ruins/Garden of Antiquities; La Alacena del Foro restaurant; acorn-fed ham, Corderex lamb, Iberian pork.
+   - Ibiza (Eivissa - Dalt Vila): Historic hilltop setting in UNESCO Dalt Vila with Mediterranean and port views.
+   - Granada: Historic Alhambra grounds with Moorish heritage and Sierra Nevada nearby.
+   - León (Hostal San Marcos): Renaissance landmark; Restaurant Rey Don Sancho featuring cecina, León black pudding, and suckling lamb.
+   - Santiago de Compostela (Hostal dos Reis Católicos): Historic pilgrimage landmark; Restaurant dos Reis.
+   - Antequera & Albacete: Porra antequerana, pío antequerano, and bienmesabe in Antequera; migas ruleras and Manchegan cuisine in Albacete.
+
+Keep answers clear, accurate, well-structured, and helpful.
+`.trim();
 
       let demoOn = false;
       let history = [];
@@ -209,19 +236,74 @@
 
       function localAnswer(q) {
         const s = q.toLowerCase();
+
+        if (
+          s.includes("amigo") ||
+          s.includes("loyalty") ||
+          s.includes("point") ||
+          s.includes("tier") ||
+          s.includes("oro") ||
+          s.includes("gold") ||
+          s.includes("circulo") ||
+          s.includes("círculo") ||
+          s.includes("breakfast")
+        ) {
+          return (
+            "Amigos de Paradores Guide:\n" +
+            "• Joining is free (18+); points are earned on direct bookings (1 pt per €3 on eligible stay/dining/spa/shop spend; 1 pt per €12 on special events) and expire after 24 months without a qualifying accommodation movement.\n" +
+            "• Amigo (Entry): 5% web Amigo discount when logged in, welcome drink, €5 off basic spa circuit on stays, 15% off Gastroparada, and a first-booking free buffet breakfast promo code (book within 6 months, stay within 1 year).\n" +
+            "• Oro (Gold): 1,500–2,999 pts + 3 stays at different Paradors over 2 years; adds 50% off buffet breakfast (for cardholder + 1 companion sharing room), €5 off parking/garage on stays, and 10% off lunch (not staying).\n" +
+            "• Círculo: 3,000+ pts + 5 stays at different Paradors over 2 years; adds free buffet breakfast all year (for cardholder + 1 companion sharing room), free garage parking on stays, 20% off lunch (not staying) + 15% Gastroparada, welcome room gift, and priority service.\n" +
+            "• Redeeming: Free nights start around 310+ pts depending on Parador/season (excludes Dec 30–31), and Gift Boxes start from 320 pts (points deducted at checkout, oldest first)."
+          );
+        }
+
         if (s.includes("book") || s.includes("reserve")) {
-          return "How to Book a Parador:\n1. Pick a Parador (Ciudad Rodrigo, Mérida, Ibiza, etc.) and dates.\n2. Choose your room and rate (sign in as an Amigo if using Amigo rates/points).\n3. Book on paradores.es, via the Paradores app, directly with the Parador, or via Central Reservations (reservas@parador.es / +34 91 374 25 00).\n4. Standard bookings generally allow changes/cancellations more than 2 days before arrival unless non-refundable (such as Early Booking).";
+          return (
+            "How to Book a Parador:\n" +
+            "1. Pick a Parador (Ciudad Rodrigo, Mérida, Ibiza, Granada, León, etc.) and dates.\n" +
+            "2. Log in to Amigos de Paradores first if using the 5% Amigo web rate or redeeming points.\n" +
+            "3. Book via paradores.es, the Paradores app, directly with the Parador, Central Reservations (reservas@parador.es / +34 91 374 25 00), or a travel agency.\n" +
+            "4. Standard bookings generally allow changes/cancellations more than 2 days before arrival (from 00:00) unless non-refundable (such as Early Booking). For >3 guests or pets, contact the Parador directly."
+          );
         }
-        if (s.includes("cancel") || s.includes("change")) {
-          return "Changes & Cancellations:\n• Manage bookings through paradores.es, Central Reservations (reservas@parador.es / +34 91 374 25 00), or the Parador.\n• Standard rates generally allow changes/cancellations more than 2 days before arrival; non-refundable rates like Early Booking cannot be cancelled.";
+
+        if (s.includes("cancel") || s.includes("change") || s.includes("gift box") || s.includes("refund")) {
+          return (
+            "Changes, Cancellations & Gift Boxes:\n" +
+            "• Manage bookings through the channel where you reserved (paradores.es, reservas@parador.es / +34 91 374 25 00, the Parador, or your travel agency).\n" +
+            "• Standard bookings generally allow changes/cancellations more than 2 days before arrival; non-refundable rates like Early Booking cannot be changed or cancelled.\n" +
+            "• Gift Boxes are not extendable, can be refunded within 15 days of purchase, and arrive physically within up to 7 working days (or digitally right away)."
+          );
         }
-        if (s.includes("amigo") || s.includes("loyalty") || s.includes("point")) {
-          return "Amigos de Paradores:\n• Free program with Standard, Gold, and Circle tiers.\n• Includes a 5% Amigo web rate discount, points on stays/services, and welcome perks.";
+
+        if (
+          s.includes("food") ||
+          s.includes("dish") ||
+          s.includes("gastronom") ||
+          s.includes("restaurant") ||
+          s.includes("albacete") ||
+          s.includes("antequera") ||
+          s.includes("leon") ||
+          s.includes("león") ||
+          s.includes("santiago")
+        ) {
+          return (
+            "Regional Gastronomy & Restaurants:\n" +
+            "• Mérida (La Alacena del Foro): Extremaduran acorn-fed ham, Corderex lamb, and Iberian pork.\n" +
+            "• León (Rey Don Sancho): Cecina, León black pudding, and Castile & León suckling lamb.\n" +
+            "• Santiago de Compostela (dos Reis): Galician classics and pilgrimage hospitality.\n" +
+            "• Antequera & Albacete: Porra antequerana, pío antequerano, and bienmesabe in Antequera; migas ruleras and Manchegan dishes in Albacete."
+          );
         }
-        if (s.includes("food") || s.includes("dish") || s.includes("gastronom") || s.includes("albacete") || s.includes("antequera")) {
-          return "Regional Gastronomy:\n• Mérida: Iberian pork, Dehesa ham, and traditional stews.\n• Albacete: Migas ruleras, pisto manchego, and Manchegan dishes.\n• Antequera: Porra antequerana, pío antequerano, and bienmesabe.";
-        }
-        return "Featured Paradors:\n• Ciudad Rodrigo: 1372 castle overlooking the Águeda river in Salamanca.\n• Mérida: 1725 Baroque monastery over Roman ruins.\n• Ibiza (Dalt Vila): Historic hilltop setting overlooking the Mediterranean and port.";
+
+        return (
+          "Featured Paradors:\n" +
+          "• Ciudad Rodrigo: 1372 castle overlooking the Águeda river in Salamanca.\n" +
+          "• Mérida: 1725 Baroque monastery over Roman ruins with a Garden of Antiquities.\n" +
+          "• Ibiza (Dalt Vila): Historic hilltop setting in UNESCO Dalt Vila overlooking the Mediterranean and port.\n" +
+          "• Granada, León & Santiago de Compostela: Iconic monuments across Spain with rich history and regional dining."
+        );
       }
 
       async function askGroq(key, promptText) {
@@ -243,7 +325,7 @@
                 model: model,
                 messages: [{ role: "system", content: SYSTEM_TEXT }, ...nextHistory],
                 temperature: 0.4,
-                max_completion_tokens: 800
+                max_completion_tokens: 900
               })
             });
             const data = await res.json().catch(() => ({}));
